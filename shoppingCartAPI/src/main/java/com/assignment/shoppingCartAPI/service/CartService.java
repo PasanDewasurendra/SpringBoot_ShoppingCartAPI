@@ -55,6 +55,14 @@ public class CartService {
 		
 		try {
 			Optional<Cart> cart = cartRepository.findById(id);
+			List<Item> items = cart.get().getItems();
+			
+			for (Item i : items) {
+				if (i.getName().equals(item.getName())) {
+					return "Item Allready Added.";
+				}
+			}
+			
 			cart.ifPresent(c -> c.addItem(item));
 			cart.ifPresent(c -> cartRepository.save(c));
 			return "Success";
