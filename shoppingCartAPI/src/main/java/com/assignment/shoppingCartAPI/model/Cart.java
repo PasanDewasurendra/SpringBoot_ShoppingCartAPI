@@ -14,11 +14,13 @@ public class Cart {
 	private String id;
 	private String customer;
 	private List<Item> items;
+	private double total;
 	
 	
 	public Cart() {
 		super();
 		this.items = new ArrayList<Item>();
+		this.total = 0.0;
 		// TODO Auto-generated constructor stub
 	}
 
@@ -56,11 +58,20 @@ public class Cart {
 		this.items.add(item);
 	}
 
-
-	@Override
-	public String toString() {
-		return "Cart {id=" + id + ", customer=" + customer + ", items=" + items + "}";
+	public double getTotal() {
+		return total;
 	}
 
+	public void setTotal(double total) {
+		this.total = total;
+	}
+
+	
+	
+	@Override
+	public String toString() {
+		return "Cart [id=" + id + ", customer=" + customer + ", items=" + items + ", total=" + total + "]";
+	}
+	
 	
 }

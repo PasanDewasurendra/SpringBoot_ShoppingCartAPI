@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.assignment.shoppingCartAPI.model.Cart;
 import com.assignment.shoppingCartAPI.model.Item;
 import com.assignment.shoppingCartAPI.repository.CartRepository;
-import com.assignment.shoppingCartAPI.repository.ItemRepository;
+import com.assignment.shoppingCartAPI.service.CartService;
 
 
 @RestController
@@ -29,111 +29,113 @@ import com.assignment.shoppingCartAPI.repository.ItemRepository;
 public class CartController {
 	
 	@Autowired
-	private CartRepository cartRepository;
+	private CartService cartService;
 	
-	@Autowired
-	private ItemRepository itemRepository;
-
+	
+	
 //	Get All Shopping Carts
 	@GetMapping(value = "/")
-	public List<Cart> getAllCarts(){
-		
-		return cartRepository.findAll();
-	}
-	
-//	Get Specific Shopping Cart
-	@GetMapping(value = "/{id}")
-	public ResponseEntity<Object> getAllItems(@PathVariable String id) {
-		
-		Cart c = cartRepository.findById(id).get();
+	public ResponseEntity<Object> getAllCarts(){
 		
 		Map<String, Object> status = new HashMap<String, Object>();
-		status.put("cartId", c.getId());
-		status.put("items", c.getItems());
-		
+
+		try {
+			status.put("Carts",cartService.getAllCarts());
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			status.put("Status", e.getMessage());
+		}
 		return ResponseEntity.ok(status);
 	}
+	
 	
 //	Create New Cart
 	@PostMapping(value = "/create")
 	public ResponseEntity<Object> addCart(@RequestBody Cart cart){
-		
-		Cart c = cartRepository.save(cart);
-		
+
 		Map<String, Object> status = new HashMap<String, Object>();
-		status.put("cartId", c.getId());
-		
+
+		try {
+			Cart c = cartService.addCart(cart);
+			status.put("cartId", c.getId());
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			status.put("Status", e.getMessage());
+		}
 		return ResponseEntity.ok(status);
 	}
 	
+	
 //	Remove Existing Cart
 	@DeleteMapping(value = "/delete/{id}")
-	public String delete(@PathVariable String id) {
+	public ResponseEntity<Object> delete(@PathVariable String id) {
 		
-		cartRepository.deleteById(id);
-		return "success";
+		Map<String, Object> status = new HashMap<String, Object>();
+
+		status.put("Status", cartService.removeCart(id));
+	
+		return ResponseEntity.ok(status);
+	}
+	
+	
+//	Get All Items from Cart
+	@GetMapping(value = "/{id}")
+	public ResponseEntity<Object> getAllItems(@PathVariable String id) {
+		
+		Map<String, Object> status = new HashMap<String, Object>();
+		
+		try {
+			Cart c = (Cart) cartService.getAllItems(id);
+			
+			status.put("cartId", c.getId());
+			status.put("items", c.getItems());
+		
+		}catch (Exception e) {
+			// TODO: handle exception
+			status.put("Status", e.getMessage());
+		}	
+		return ResponseEntity.ok(status);
 	}
 	
 	
 //	Add Item to Cart
 	@PostMapping(value = "/{id}/add")
 	public ResponseEntity<Object> addItem(@PathVariable String id, @RequestBody Item item) {
-		
-		Optional<Cart> cart = cartRepository.findById(id);
-		cart.ifPresent(c -> c.addItem(item));
-		cart.ifPresent(c -> cartRepository.save(c));
-		
+
 		Map<String, String> status = new HashMap<String, String>();
-		status.put("Status", "Success");
-		
+
+		status.put("Status", cartService.addItemToCart(id, item));
+
 		return ResponseEntity.ok(status);
 		
 	}
+	
 	
 //	Update Item from Cart
 	@PutMapping(value = "/{id}/update")
 	public ResponseEntity<Object> updateItem(@PathVariable String id, @RequestBody Item item) {
 		
-		Optional<Cart> cart = cartRepository.findById(id);
-		List<Item> items = cart.get().getItems();
-		Map<String, String> status = new HashMap<String, String>();
+		Map<String, Object> status = new HashMap<String, Object>();
 		
-		for (Item i : items) {
-			if (i.getName().equals(item.getName())) {
-				i.setQty(item.getQty());
-				status.put("Status", "Success");
-				break;
-			}else {
-				status.put("Status", "Item not found");
-			}
-		}
-		cart.ifPresent(c -> c.setItems(items));
-		cart.ifPresent(c -> cartRepository.save(c));
-		return ResponseEntity.ok(status);
+		status.put("Status", cartService.updateCartItem(id, item));
+		
+		return ResponseEntity.ok(status);	
+	
 	}
+	
 	
 //	Remove Item from Cart
 	@DeleteMapping(value = "/{id}/delete")
 	public ResponseEntity<Object> deleteItem(@PathVariable String id, @RequestBody Item item) {
 		
-		Optional<Cart> cart = cartRepository.findById(id);
-		List<Item> items = cart.get().getItems();
-		Map<String, String> status = new HashMap<String, String>();
+		Map<String, Object> status = new HashMap<String, Object>();
 		
-		for (Item i : items) {
-			if (i.getName().equals(item.getName())) {
-				items.remove(i);
-				status.put("Status", "Success");
-				break;
-				
-			}else {
-				status.put("Status", "Item not found");
-			}
-		}	
-		cart.ifPresent(c -> c.setItems(items));
-		cart.ifPresent(c -> cartRepository.save(c));
-		
+		status.put("Status", cartService.removeCartItem(id, item));
+
 		return ResponseEntity.ok(status);
+
 	}
 	
 	
@@ -142,17 +144,17 @@ public class CartController {
 	public ResponseEntity<Object> checkout(@PathVariable String id) {
 		
 		Map<String, Object> status = new HashMap<String, Object>();
-		Optional<Cart> cart = cartRepository.findById(id);
-		List<Item> items = cart.get().getItems();
-		
-		double total = 0;
-		for (Item i : items) {
-			total += i.getPrice() * i.getQty();
+
+		try {
+			Cart c = cartService.checkout(id);
+			status.put("cartId", c.getId());
+			status.put("total", c.getTotal());
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			status.put("status", e.getMessage());
 		}
 		
-		status.put("cartId", cart.get().getId());
-		status.put("total", total);
-			
 		return ResponseEntity.ok(status);	
 	}
 		

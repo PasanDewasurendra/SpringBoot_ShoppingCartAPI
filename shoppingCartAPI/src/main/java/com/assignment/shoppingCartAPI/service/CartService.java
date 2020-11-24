@@ -19,62 +19,127 @@ public class CartService {
 	@Autowired
 	private CartRepository cartRepository;
 	
+	
 	public List<Cart> getAllCarts(){
 		return cartRepository.findAll();
 	}
 	
-	public void addCart(String customer) {
-		cartRepository.save(new Cart(customer));
+	public Cart addCart(Cart cart) {
+		return cartRepository.save(cart);
 	}
 	
-	public Optional<Cart> getCart(String id){
-		return cartRepository.findById(id);
-	}
-	
-	public void removeCart(String id){
-		cartRepository.deleteById(id);
-	}
-	
-	
-	public Optional<Cart> addItemToCart(String id, Item item){
+	public String removeCart(String id){
+		try {
+			cartRepository.deleteById(id);
+			return "Success";
+		}catch (Exception e) {
+			// TODO: handle exception
+			return e.getMessage();
+		}
 		
-		Optional<Cart> cart = cartRepository.findById(id);
-		cart.ifPresent(c -> c.addItem(item));
-		cart.ifPresent(c -> cartRepository.save(c));
-		return cart;
+	}
+	
+	
+	public Object getAllItems(String id){
+		try {
+			return cartRepository.findById(id).get();
+		}catch (Exception e) {
+			// TODO: handle exception
+			return e.getMessage();
+		}
+		
+	}
+	
+	
+	public String addItemToCart(String id, Item item){
+		
+		try {
+			Optional<Cart> cart = cartRepository.findById(id);
+			cart.ifPresent(c -> c.addItem(item));
+			cart.ifPresent(c -> cartRepository.save(c));
+			return "Success";
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			return e.getMessage();
+		}
+		
 	}
 	
 
-	public Optional<Cart> updateCartItem(String id, Item item) {
-		
-		Optional<Cart> cart = cartRepository.findById(id);
-		List<Item> items = cart.get().getItems();
-		
-		for (Item i : items) {
-			if (i.getName().equals(item.getName())) {
-				i.setQty(item.getQty());
-				break;
+	public String updateCartItem(String id, Item item) {
+		try {
+			Optional<Cart> cart = cartRepository.findById(id);
+			List<Item> items = cart.get().getItems();
+			String status = null;
+			
+			for (Item i : items) {
+				if (i.getName().equals(item.getName())) {
+					i.setQty(item.getQty());
+					status = "Success";
+					break;
+				}else {
+					status = "Item Not Found.";
+				}
 			}
+			cart.ifPresent(c -> c.setItems(items));
+			cart.ifPresent(c -> cartRepository.save(c));
+			
+			return status;
+		
+		}catch (Exception e) {
+			// TODO: handle exception
+			return e.getMessage();
 		}
-		cart.ifPresent(c -> c.setItems(items));
-		cart.ifPresent(c -> cartRepository.save(c));
-		return cart;
+		
 	}
 	
 	
-	public Optional<Cart> removeCartItem(String id, Item item) {
+	public String removeCartItem(String id, Item item) {
+		try {
+			Optional<Cart> cart = cartRepository.findById(id);
+			List<Item> items = cart.get().getItems();
+			String status = null;
+			
+			for (Item i : items) {
+				if (i.getName().equals(item.getName())) {
+					items.remove(i);
+					status = "Success";
+					break;
+				}else {
+					status = "Item Not Found.";
+				}
+			}	
+			cart.ifPresent(c -> c.setItems(items));
+			cart.ifPresent(c -> cartRepository.save(c));
+			
+			return status;
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			return e.getMessage();
+		}
+		
+	}
+	
+	
+	public Cart checkout(String id) {
+		
 		Optional<Cart> cart = cartRepository.findById(id);
 		List<Item> items = cart.get().getItems();
 		
+		double total = 0;
 		for (Item i : items) {
-			if (i.getName().equals(item.getName())) {
-				items.remove(i);
-				break;
-			}
-		}	
-		cart.ifPresent(c -> c.setItems(items));
-		cart.ifPresent(c -> cartRepository.save(c));
-		return cart;
+			total += i.getPrice() * i.getQty();
+		}
+		
+		items.clear();
+		cart.get().setItems(items);
+		cart.get().setTotal(total);
+		cartRepository.save(cart.get());
+		
+		return cart.get();
+		
 	}
 	
 	
